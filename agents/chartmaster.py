@@ -149,7 +149,7 @@ class ChartMaster:
             .data(bins)
             .enter().append('rect')
             .attr('x', 1)
-            .attr('transform', d => `translate(${x(d.x0)},${y(d.length)})`)
+            .attr('transform', d => `translate(${{x(d.x0)}},${{y(d.length)}})`)
             .attr('width', d => Math.max(0, x(d.x1) - x(d.x0) - 1))
             .attr('height', d => height - y(d.length))
             .attr('fill', '#636efa');
