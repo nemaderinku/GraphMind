@@ -1,4 +1,5 @@
 import sys
+import webbrowser
 from agents.ingestor import Ingestor
 from agents.cleaner import Cleaner
 from agents.analyst import Analyst
@@ -16,12 +17,16 @@ def main(csv_path: str):
     df = ingestor.load_csv(csv_path)
     cleaned = cleaner.clean(df)
     stats = analyst.describe(cleaned)
-    chart = chartmaster.generate_scatter(cleaned, cleaned.columns[0], cleaned.columns[1])
+    chart_html = chartmaster.generate_scatter(
+        cleaned, cleaned.columns[0], cleaned.columns[1]
+    )
+    with open("chart.html", "w", encoding="utf-8") as f:
+        f.write(chart_html)
+    webbrowser.open("chart.html")
     report = reporter.summarize(stats)
 
     print(report)
-    print("\nChart spec:")
-    print(chart)
+    print("\nChart saved to chart.html")
 
 
 if __name__ == "__main__":
