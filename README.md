@@ -1,8 +1,10 @@
 # GraphMind
 
 GraphMind is a simple prototype of a multi-agent analyst for your data graph. It
-allows you to ingest a CSV file, clean it, generate basic statistics and a chart
-rendered with D3.js, then output an executive style summary.
+allows you to ingest a CSV file, clean it, generate basic statistics and a
+series of charts rendered with D3.js, then output an executive style summary.
+Given multi-dimensional data, the system automatically chooses between several
+chart types and generates at least one (and up to five) visualizations.
 
 ## Requirements
 
@@ -23,6 +25,6 @@ rendered with D3.js, then output an executive style summary.
    python main.py path/to/your/data.csv
    ```
 
-The script will generate `chart.html` using D3.js and open it in your default
-browser. This runs entirely on your local machine and should work on most
-laptops, including a Lenovo P52. No GPU is required.
+The script will generate up to five HTML charts using D3.js and open them in
+your default browser. This runs entirely on your local machine and should work
+on most laptops, including a Lenovo P52. No GPU is required.

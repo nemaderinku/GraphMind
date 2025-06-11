@@ -17,16 +17,14 @@ def main(csv_path: str):
     df = ingestor.load_csv(csv_path)
     cleaned = cleaner.clean(df)
     stats = analyst.describe(cleaned)
-    chart_html = chartmaster.generate_scatter(
-        cleaned, cleaned.columns[0], cleaned.columns[1]
-    )
-    with open("chart.html", "w", encoding="utf-8") as f:
-        f.write(chart_html)
-    webbrowser.open("chart.html")
+    chart_files = chartmaster.generate_charts(cleaned)
+    for file in chart_files:
+        webbrowser.open(file)
     report = reporter.summarize(stats)
 
     print(report)
-    print("\nChart saved to chart.html")
+    if chart_files:
+        print(f"\nCharts saved to: {', '.join(chart_files)}")
 
 
 if __name__ == "__main__":
