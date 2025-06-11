@@ -22,7 +22,8 @@ class ChartMaster:
         const margin = {{top: 20, right: 30, bottom: 30, left: 40}};
         const width = +svg.attr('width') - margin.left - margin.right;
         const height = +svg.attr('height') - margin.top - margin.bottom;
-        const g = svg.append('g').attr('transform', `translate(${margin.left},${margin.top})`);
+        const g = svg.append('g')
+            .attr('transform', `translate(${{margin.left}},${{margin.top}})`);
 
         const xScale = d3.scalePoint()
             .domain(data.map(d => d['{x}']))
@@ -33,7 +34,7 @@ class ChartMaster:
             .range([height, 0]);
 
         g.append('g')
-            .attr('transform', `translate(0,${height})`)
+            .attr('transform', `translate(0,${{height}})`)
             .call(d3.axisBottom(xScale));
 
         g.append('g')
