@@ -17,6 +17,8 @@ def main(csv_path: str):
     cleaned = cleaner.clean(df)
     stats = analyst.describe(cleaned)
     chart = chartmaster.generate_scatter(cleaned, cleaned.columns[0], cleaned.columns[1])
+    html_path = chartmaster.generate_d3_html(cleaned, cleaned.columns[0], cleaned.columns[1])
+    chartmaster.open_d3_html(html_path)
     report = reporter.summarize(stats)
 
     print(report)

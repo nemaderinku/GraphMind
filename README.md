@@ -2,7 +2,8 @@
 
 GraphMind is a simple prototype of a multi-agent analyst for your data graph. It
 allows you to ingest a CSV file, clean it, generate basic statistics and a chart,
-then output an executive style summary.
+then output an executive style summary. The generated chart uses D3.js so you can
+hover over points to inspect their values.
 
 ## Requirements
 
@@ -17,7 +18,7 @@ then output an executive style summary.
    pip install pandas plotly
    ```
 
-2. Execute the pipeline with a CSV file:
+2. Execute the pipeline with a CSV file and an interactive D3 chart will open in your browser:
 
    ```bash
    python main.py path/to/your/data.csv
