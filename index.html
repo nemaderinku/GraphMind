@@ -1,0 +1,1624 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🤖 Enhanced Multi-Agent Data Processor</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    function openChartsInNewTab(chartCode) {
+      console.log('🚀 Opening charts in new tab...');
+      console.log('📊 Chart code provided:', !!chartCode);
+      console.log('📊 Window chart code available:', !!window.currentChartCode);
+      console.log('📊 Chart code length:', chartCode ? chartCode.length : 'undefined');
+
+      // Use provided chartCode or fallback to stored version
+      const codeToUse = chartCode || window.currentChartCode;
+
+      if (!codeToUse) {
+        console.error('❌ No chart code available');
+        alert('Chart code not available. Please try processing again.');
+        return false;
+      }
+
+      console.log('📊 Using chart code length:', codeToUse.length);
+      console.log('📊 Chart code preview:', codeToUse.substring(0, 200));
+
+      try {
+        // Create a fresh blob each time
+        const blob = new Blob([codeToUse], { type: 'text/html; charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+
+        console.log('📊 Blob created, URL:', url);
+
+        // Open in new tab with unique target to avoid caching issues
+        const timestamp = Date.now();
+        const newTab = window.open(url, `charts_${timestamp}`);
+
+        if (newTab) {
+          console.log('✅ Charts opened in new tab successfully');
+
+          // Store the URL temporarily and clean up after the tab loads
+          const cleanupTimeout = setTimeout(() => {
+            URL.revokeObjectURL(url);
+            console.log('🧹 Blob URL cleaned up after timeout');
+          }, 5000); // Increased timeout to ensure tab loads
+
+          // Try to detect when the new tab is loaded and clean up sooner
+          try {
+            newTab.addEventListener('load', () => {
+              clearTimeout(cleanupTimeout);
+              setTimeout(() => {
+                URL.revokeObjectURL(url);
+                console.log('🧹 Blob URL cleaned up after load');
+              }, 1000);
+            });
+          } catch (e) {
+            // Cross-origin restriction - fallback to timeout cleanup
+            console.log('📝 Using timeout cleanup due to cross-origin restrictions');
+          }
+
+          return true;
+        } else {
+          console.error('❌ Failed to open new tab - popup blocked?');
+          URL.revokeObjectURL(url); // Clean up immediately if failed
+          alert('Pop-up blocked! Please allow pop-ups for this site to view charts in a new tab.');
+          return false;
+        }
+      } catch (error) {
+        console.error('❌ Error creating chart tab:', error);
+        alert('Error opening charts. Please check the console for details.');
+        return false;
+      }
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      margin: 0;
+      padding: 20px;
+      background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+      min-height: 100vh;
+    }
+
+    .container {
+      max-width: 1200px;
+      min-width: 1000px;
+      width: 1200px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+      overflow: hidden;
+    }
+
+    .header {
+      background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+      color: white;
+      padding: 30px;
+      text-align: center;
+    }
+
+    .header h1 {
+      margin: 0;
+      font-size: 2.5em;
+      font-weight: 300;
+    }
+
+    .header p {
+      margin: 10px 0 0 0;
+      opacity: 0.9;
+      font-size: 1.1em;
+    }
+
+    .content {
+      padding: 30px;
+    }
+
+    .upload-section {
+      background: #f8f9fa;
+      border-radius: 8px;
+      padding: 25px;
+      margin-bottom: 30px;
+      border: 2px dashed #dee2e6;
+      transition: border-color 0.3s;
+    }
+
+    .upload-section:hover {
+      border-color: #4facfe;
+    }
+
+    .form-group {
+      margin-bottom: 20px;
+    }
+
+    label {
+      display: block;
+      font-weight: 600;
+      margin-bottom: 8px;
+      color: #495057;
+    }
+
+    input[type="file"] {
+      width: 100%;
+      padding: 12px;
+      border: 2px solid #e9ecef;
+      border-radius: 6px;
+      font-size: 16px;
+      transition: border-color 0.3s;
+    }
+
+    input[type="file"]:focus {
+      outline: none;
+      border-color: #4facfe;
+    }
+
+    textarea {
+      width: 100%;
+      height: 120px;
+      padding: 12px;
+      border: 2px solid #e9ecef;
+      border-radius: 6px;
+      font-size: 14px;
+      font-family: 'Courier New', monospace;
+      resize: vertical;
+      transition: border-color 0.3s;
+    }
+
+    textarea:focus {
+      outline: none;
+      border-color: #4facfe;
+    }
+
+    .btn {
+      padding: 12px 20px;
+      border: none;
+      border-radius: 6px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .btn-sample {
+      background: #6c757d;
+      color: white;
+      margin-bottom: 10px;
+    }
+
+    .btn-sample:hover {
+      background: #545b62;
+      transform: translateY(-1px);
+    }
+
+    .submit-btn {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 15px 30px;
+      border: none;
+      border-radius: 6px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+      width: 100%;
+      position: relative;
+    }
+
+    .submit-btn:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+    }
+
+    .submit-btn:disabled {
+      background: #6c757d;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+
+    /* Progress indicator styles */
+    .progress-container {
+      background: #f8f9fa;
+      border-radius: 8px;
+      padding: 20px;
+      margin: 20px 0;
+      border: 1px solid #e9ecef;
+      display: none;
+      width: 100%;
+      box-sizing: border-box;
+      overflow-x: hidden;
+    }
+
+    .progress-header {
+      font-weight: 600;
+      margin-bottom: 15px;
+      color: #495057;
+    }
+
+    .agent-progress {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 20px;
+      gap: 10px;
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    .agent-card {
+      flex: 1;
+      background: white;
+      border-radius: 6px;
+      padding: 15px;
+      text-align: center;
+      border: 2px solid #e9ecef;
+      transition: all 0.3s ease;
+      min-width: 0;
+      box-sizing: border-box;
+    }
+
+    .agent-card.pending {
+      border-color: #dee2e6;
+      background: #f8f9fa;
+      color: #6c757d;
+    }
+
+    .agent-card.processing {
+      border-color: #ffc107;
+      background: #fff3cd;
+      color: #856404;
+      animation: pulse 1.5s ease-in-out infinite alternate;
+    }
+
+    .agent-card.completed {
+      border-color: #28a745;
+      background: #d4edda;
+      color: #155724;
+    }
+
+    .agent-card.error {
+      border-color: #dc3545;
+      background: #f8d7da;
+      color: #721c24;
+    }
+
+    @keyframes pulse {
+      from {
+        transform: scale(1);
+        box-shadow: 0 2px 8px rgba(255, 193, 7, 0.3);
+      }
+      to {
+        transform: scale(1.05);
+        box-shadow: 0 4px 16px rgba(255, 193, 7, 0.6);
+      }
+    }
+
+    .agent-icon {
+      font-size: 24px;
+      display: block;
+      margin-bottom: 8px;
+    }
+
+    .agent-name {
+      font-weight: 600;
+      margin-bottom: 5px;
+    }
+
+    .agent-status {
+      font-size: 12px;
+      opacity: 0.8;
+    }
+
+    .agent-duration {
+      font-size: 11px;
+      margin-top: 5px;
+      font-weight: 500;
+    }
+
+    /* Enhanced conversation styles */
+    .live-conversation {
+      background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+      border: 2px solid #dee2e6;
+      border-radius: 12px;
+      max-height: 500px;
+      overflow-y: auto;
+      margin-top: 15px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+
+    .conversation-header {
+      background: linear-gradient(135deg, #495057 0%, #343a40 100%);
+      color: white;
+      padding: 15px 20px;
+      font-weight: 600;
+      font-size: 14px;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      border-radius: 10px 10px 0 0;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .conversation-header .typing-indicator {
+      display: none;
+      color: #ffc107;
+      font-size: 12px;
+    }
+
+    .conversation-header.typing .typing-indicator {
+      display: inline;
+      animation: typingPulse 1.5s ease-in-out infinite;
+    }
+
+    @keyframes typingPulse {
+      0%, 100% { opacity: 0.7; }
+      50% { opacity: 1; }
+    }
+
+    .live-message {
+      margin: 15px;
+      padding: 0;
+      animation: slideInUp 0.4s ease-out;
+      position: relative;
+    }
+
+    @keyframes slideInUp {
+      from {
+        opacity: 0;
+        transform: translateY(20px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .message-bubble {
+      background: white;
+      border-radius: 16px;
+      padding: 15px 20px;
+      margin-bottom: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      border: 1px solid #e9ecef;
+      position: relative;
+    }
+
+    .message-bubble.agent-c {
+      background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+      border-left: 4px solid #2196f3;
+      margin-right: 50px;
+    }
+
+    .message-bubble.agent-d {
+      background: linear-gradient(135deg, #e8f5e8 0%, #c8e6c9 100%);
+      border-left: 4px solid #4caf50;
+      margin-left: 50px;
+    }
+
+    .message-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .agent-avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      font-weight: bold;
+    }
+
+    .agent-avatar.agent-c {
+      background: linear-gradient(135deg, #2196f3 0%, #1976d2 100%);
+      color: white;
+    }
+
+    .agent-avatar.agent-d {
+      background: linear-gradient(135deg, #4caf50 0%, #388e3c 100%);
+      color: white;
+    }
+
+    .message-role-new {
+      font-weight: 600;
+      color: #495057;
+      font-size: 14px;
+    }
+
+    .message-status {
+      font-size: 11px;
+      color: #6c757d;
+      background: rgba(0,0,0,0.05);
+      padding: 2px 8px;
+      border-radius: 12px;
+      margin-left: auto;
+    }
+
+    .message-content-new {
+      font-family: 'Courier New', Monaco, monospace;
+      font-size: 11px;
+      background: rgba(0,0,0,0.03);
+      padding: 12px;
+      border-radius: 8px;
+      max-height: 120px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      border: 1px solid rgba(0,0,0,0.1);
+    }
+
+    .message-content-new:hover {
+      background: rgba(0,0,0,0.05);
+      border-color: rgba(0,0,0,0.2);
+    }
+
+    .message-content-new.expanded {
+      max-height: none;
+    }
+
+    .message-timestamp-new {
+      font-size: 10px;
+      color: #6c757d;
+      margin-top: 8px;
+      text-align: right;
+    }
+
+    .typing-animation {
+      display: flex;
+      gap: 3px;
+      align-items: center;
+      margin: 5px 0;
+    }
+
+    .typing-dot {
+      width: 6px;
+      height: 6px;
+      background: #6c757d;
+      border-radius: 50%;
+      animation: typing 1.4s ease-in-out infinite;
+    }
+
+    .typing-dot:nth-child(2) {
+      animation-delay: 0.2s;
+    }
+
+    .typing-dot:nth-child(3) {
+      animation-delay: 0.4s;
+    }
+
+    @keyframes typing {
+      0%, 60%, 100% {
+        transform: translateY(0);
+        opacity: 0.5;
+      }
+      30% {
+        transform: translateY(-10px);
+        opacity: 1;
+      }
+    }
+
+    .chart-container-dual {
+      background: white;
+      border-radius: 6px;
+      border: 1px solid #e9ecef;
+      min-height: 600px;
+      overflow: visible;
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    @media (max-width: 768px) {
+      .container {
+        width: 95%;
+        min-width: 320px;
+        margin: 10px auto;
+      }
+
+      .content {
+        padding: 15px;
+      }
+
+      .message-bubble.agent-c {
+        margin-right: 20px;
+      }
+
+      .message-bubble.agent-d {
+        margin-left: 20px;
+      }
+
+      .agent-progress {
+        flex-direction: column;
+      }
+    }
+
+    .section {
+      margin-top: 30px;
+      background: #f8f9fa;
+      border-radius: 8px;
+      overflow: hidden;
+      border: 1px solid #e9ecef;
+      opacity: 0;
+      transform: translateY(20px);
+      transition: all 0.5s ease;
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    .section.visible {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .section-header {
+      background: #495057;
+      color: white;
+      padding: 15px 20px;
+      font-weight: 600;
+      font-size: 1.1em;
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    .section-content {
+      padding: 20px;
+      width: 100%;
+      box-sizing: border-box;
+      overflow-x: hidden;
+    }
+
+    pre {
+      background: #f1f3f4;
+      padding: 15px;
+      border-radius: 6px;
+      overflow-x: auto;
+      white-space: pre-wrap;
+      font-size: 13px;
+      line-height: 1.5;
+      border: 1px solid #e9ecef;
+      max-height: 400px;
+      overflow-y: auto;
+      width: 100%;
+      box-sizing: border-box;
+      word-wrap: break-word;
+      overflow-wrap: break-word;
+    }
+
+    .loading {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: #667eea;
+      font-weight: 600;
+    }
+
+    .spinner {
+      width: 20px;
+      height: 20px;
+      border: 2px solid #f3f3f3;
+      border-top: 2px solid #667eea;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .chart-container {
+      background: white;
+      border-radius: 6px;
+      border: 1px solid #e9ecef;
+      min-height: 400px;
+      overflow: visible;
+    }
+
+    .chart-toggle-btn {
+      background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+      color: white;
+      padding: 10px 20px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 600;
+      margin-bottom: 15px;
+    }
+
+    .chart-toggle-btn:hover {
+      background: linear-gradient(135deg, #218838 0%, #1ea088 100%);
+      transform: translateY(-1px);
+    }
+
+    .error {
+      color: #dc3545;
+      background: #f8d7da;
+      padding: 15px;
+      border-radius: 6px;
+      border: 1px solid #f5c6cb;
+    }
+
+    .success {
+      color: #155724;
+      background: #d4edda;
+      padding: 15px;
+      border-radius: 6px;
+      border: 1px solid #c3e6cb;
+    }
+
+    .processing-time {
+      background: #e3f2fd;
+      padding: 15px;
+      border-radius: 6px;
+      margin-top: 15px;
+      border: 1px solid #bbdefb;
+    }
+
+    .time-breakdown {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    .time-item {
+      text-align: center;
+      padding: 8px;
+      background: white;
+      border-radius: 4px;
+      border: 1px solid #90caf9;
+    }
+
+    .time-label {
+      font-size: 12px;
+      color: #666;
+      margin-bottom: 4px;
+    }
+
+    .time-value {
+      font-weight: 600;
+      color: #1976d2;
+    }
+
+    .collaboration-status {
+      background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%);
+      color: #495057;
+      padding: 10px 15px;
+      border-radius: 6px;
+      margin: 10px 0;
+      font-weight: 500;
+      text-align: center;
+      animation: fadeIn 0.5s ease-out;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    @media (max-width: 768px) {
+      .container {
+        margin: 10px;
+        border-radius: 8px;
+      }
+
+      .content {
+        padding: 20px;
+      }
+
+      .header {
+        padding: 20px;
+      }
+
+      .header h1 {
+        font-size: 2em;
+      }
+
+      .agent-progress {
+        flex-direction: column;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>🤖 Enhanced Multi-Agent Processor</h1>
+      <p>Watch our AI agents work together in real-time to clean, analyze, and visualize your data</p>
+    </div>
+
+    <div class="content">
+      <div class="upload-section">
+        <form id="csvForm">
+          <div class="form-group">
+            <label for="csvFile">📁 Upload CSV File:</label>
+            <input type="file" id="csvFile" name="file" accept=".csv">
+          </div>
+
+          <div class="form-group">
+            <label for="csvText">📝 Or Paste CSV Text:</label>
+            <textarea id="csvText" name="csv_text" placeholder="Name,Age,City,Salary&#10;John,25,New York,50000&#10;Jane,30,Los Angeles,65000&#10;Bob,35,Chicago,55000&#10;Alice,28,Seattle,58000&#10;Mike,32,Boston,62000"></textarea>
+          </div>
+
+          <div class="form-group">
+            <button type="button" onclick="loadSampleData()" class="btn btn-sample">
+              📊 Load Sample Data
+            </button>
+          </div>
+
+          <button type="submit" class="submit-btn" id="submitBtn">
+            🚀 Process with AI Agents (Real-time)
+          </button>
+        </form>
+      </div>
+
+      <!-- Real-time Progress Container -->
+      <div class="progress-container" id="progressContainer">
+        <div class="progress-header">🔄 Processing Progress</div>
+
+        <div class="agent-progress">
+          <div class="agent-card pending" id="agentA">
+            <div class="agent-icon">🔧</div>
+            <div class="agent-name">Agent A</div>
+            <div class="agent-status">Data Cleaning</div>
+            <div class="agent-duration" id="durationA"></div>
+          </div>
+
+          <div class="agent-card pending" id="agentB">
+            <div class="agent-icon">📊</div>
+            <div class="agent-name">Agent B</div>
+            <div class="agent-status">Data Analysis</div>
+            <div class="agent-duration" id="durationB"></div>
+          </div>
+
+          <div class="agent-card pending" id="agentCD">
+            <div class="agent-icon">🤝</div>
+            <div class="agent-name">Agents C & D</div>
+            <div class="agent-status">Chart Collaboration</div>
+            <div class="agent-duration" id="durationCD"></div>
+          </div>
+        </div>
+
+        <!-- Live Collaboration Status -->
+        <div id="collaborationStatus" style="display: none;"></div>
+
+        <!-- Live Conversation -->
+        <div class="live-conversation" id="liveConversation" style="display: none;">
+          <div class="conversation-header">
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <span>💬</span>
+              <span>Live Agent C ↔ D Collaboration</span>
+              <div class="typing-indicator">Agent C is thinking...</div>
+            </div>
+            <span id="conversationCount" style="margin-left: auto; font-size: 11px;"></span>
+          </div>
+          <div id="conversationMessages"></div>
+
+          <!-- Chart button below conversation -->
+          <div id="chartButtonContainer" style="display: none; padding: 15px; background: #f8f9fa; border-top: 1px solid #e9ecef; text-align: center;">
+            <button onclick="openChartsInNewTab(window.currentChartCode)" class="chart-toggle-btn" style="padding: 12px 25px; font-size: 14px;">
+              🚀 Open Charts in New Tab
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="section" id="agentASection" style="display:none;">
+        <div class="section-header" onclick="toggleSection('agentAResults')" style="cursor: pointer;">
+          🔧 Agent A: Data Cleaning Results
+          <span id="agentAToggle" style="float: right;">▼</span>
+        </div>
+        <div class="section-content" id="agentAResults">
+          <pre id="cleanedData"></pre>
+        </div>
+      </div>
+
+      <div class="section" id="agentBSection" style="display:none;">
+        <div class="section-header" onclick="toggleSection('agentBInsights')" style="cursor: pointer;">
+          📊 Agent B: Data Insights
+          <span id="agentBToggle" style="float: right;">▼</span>
+        </div>
+        <div class="section-content" id="agentBInsights">
+          <pre id="graphIdeas"></pre>
+        </div>
+      </div>
+
+      <div id="processingTime" class="processing-time" style="display:none;">
+        <strong>⏱️ Processing Performance:</strong>
+        <div class="time-breakdown" id="timeBreakdown"></div>
+      </div>
+
+      <div id="errorDisplay" style="display:none;"></div>
+    </div>
+  </div>
+
+  <script>
+    const form = document.getElementById('csvForm');
+    const submitBtn = document.getElementById('submitBtn');
+    const progressContainer = document.getElementById('progressContainer');
+    const cleanedEl = document.getElementById('cleanedData');
+    const graphEl = document.getElementById('graphIdeas');
+    const errorEl = document.getElementById('errorDisplay');
+    const timeEl = document.getElementById('processingTime');
+    const timeBreakdownEl = document.getElementById('timeBreakdown');
+
+    // Live conversation elements
+    const liveConversation = document.getElementById('liveConversation');
+    const conversationMessages = document.getElementById('conversationMessages');
+    const conversationCount = document.getElementById('conversationCount');
+    const collaborationStatus = document.getElementById('collaborationStatus');
+
+    // Section elements
+    const sections = {
+      agentA: document.getElementById('agentASection'),
+      agentB: document.getElementById('agentBSection'),
+      conversation: document.getElementById('conversationSection')
+    };
+
+    // Agent card elements
+    const agentCards = {
+      A: document.getElementById('agentA'),
+      B: document.getElementById('agentB'),
+      CD: document.getElementById('agentCD')
+    };
+
+    let eventSource = null;
+    let conversationMessageCount = 0;
+
+    function loadSampleData() {
+      const sampleCSV = `Name,Age,City,Salary
+John,25,New York,50000
+Jane,30,Los Angeles,65000
+Bob,35,Chicago,55000
+Alice,28,Seattle,58000
+Mike,32,Boston,62000
+Sarah,29,Austin,54000
+David,31,Denver,59000`;
+
+      document.getElementById('csvText').value = sampleCSV;
+      document.getElementById('csvFile').value = '';
+    }
+
+    function loadSampleData() {
+      const sampleCSV = `Name,Age,City,Salary
+John,25,New York,50000
+Jane,30,Los Angeles,65000
+Bob,35,Chicago,55000
+Alice,28,Seattle,58000
+Mike,32,Boston,62000
+Sarah,29,Austin,54000
+David,31,Denver,59000`;
+
+      document.getElementById('csvText').value = sampleCSV;
+      document.getElementById('csvFile').value = '';
+    }
+
+    function showError(message) {
+      errorEl.className = 'error';
+      errorEl.innerHTML = `❌ <strong>Error:</strong> ${message}`;
+      errorEl.style.display = 'block';
+    }
+
+    function showSuccess(message) {
+      errorEl.className = 'success';
+      errorEl.innerHTML = `✅ <strong>Success:</strong> ${message}`;
+      errorEl.style.display = 'block';
+    }
+
+    function hideError() {
+      errorEl.style.display = 'none';
+    }
+
+    function updateAgentStatus(agent, status, duration = null) {
+      console.log(`🔄 Updating Agent ${agent} to status: ${status}, duration: ${duration}`);
+
+      const card = agentCards[agent];
+      if (!card) {
+        console.error(`❌ Agent card not found for: ${agent}. Available cards:`, Object.keys(agentCards));
+        return;
+      }
+
+      // Remove all status classes
+      card.classList.remove('pending', 'processing', 'completed', 'error');
+      card.classList.add(status);
+
+      console.log(`✅ Agent ${agent} class updated to: ${status}`);
+      console.log(`📊 Agent ${agent} current classes:`, card.className);
+
+      if (duration) {
+        const durationEl = document.getElementById(`duration${agent}`);
+        if (durationEl) {
+          durationEl.textContent = `${duration}s`;
+          console.log(`⏱️ Agent ${agent} duration set to: ${duration}s`);
+        } else {
+          console.warn(`⚠️ Duration element not found for Agent ${agent}`);
+        }
+      }
+
+      // Force a visual update by adding a small animation
+      card.style.transform = 'scale(1.02)';
+      setTimeout(() => {
+        card.style.transform = 'scale(1)';
+      }, 150);
+    }
+
+    function showSection(sectionName) {
+      const section = sections[sectionName];
+      if (section) {
+        section.style.display = 'block';
+        // Trigger animation
+        setTimeout(() => section.classList.add('visible'), 100);
+      }
+    }
+
+    function toggleSection(sectionId) {
+      const section = document.getElementById(sectionId);
+      let toggle;
+
+      if (sectionId === 'agentAResults') {
+        toggle = document.getElementById('agentAToggle');
+      } else if (sectionId === 'agentBInsights') {
+        toggle = document.getElementById('agentBToggle');
+      }
+
+      if (section && toggle) {
+        if (section.style.display === 'none') {
+          section.style.display = 'block';
+          toggle.textContent = '▼';
+        } else {
+          section.style.display = 'none';
+          toggle.textContent = '▶';
+        }
+      }
+    }
+
+    function showTypingIndicator(agent) {
+      const header = document.querySelector('.conversation-header');
+      const indicator = header.querySelector('.typing-indicator');
+
+      header.classList.add('typing');
+      indicator.textContent = `Agent ${agent} is thinking...`;
+      indicator.style.display = 'inline';
+    }
+
+    function hideTypingIndicator() {
+      const header = document.querySelector('.conversation-header');
+      const indicator = header.querySelector('.typing-indicator');
+
+      header.classList.remove('typing');
+      indicator.style.display = 'none';
+    }
+
+    function addLiveMessage(interaction) {
+      const messageDiv = document.createElement('div');
+      messageDiv.className = 'live-message';
+
+      const agentType = interaction.role.includes('Agent C') ? 'c' : 'd';
+      const agentLetter = agentType.toUpperCase();
+      const timestamp = new Date().toLocaleTimeString();
+      const content = interaction.content || 'Processing...';
+
+      console.log(`💬 Adding message from Agent ${agentLetter}:`, {
+        role: interaction.role,
+        contentLength: content.length,
+        contentPreview: content.substring(0, 100)
+      });
+
+      // Determine status/action
+      let status = 'Working...';
+      if (interaction.action) {
+        if (interaction.action.includes('Creating')) status = 'Creating Code';
+        else if (interaction.action.includes('Reviewing')) status = 'Reviewing Code';
+        else if (interaction.action.includes('Fixing')) status = 'Fixing Issues';
+        else status = interaction.action;
+      }
+
+      // Create the message bubble with proper HTML escaping for code content
+      const messageHTML = `
+        <div class="message-bubble agent-${agentType}">
+          <div class="message-header">
+            <div class="agent-avatar agent-${agentType}">${agentLetter}</div>
+            <div class="message-role-new">Agent ${agentLetter}</div>
+            <div class="message-status">${status}</div>
+          </div>
+          <div class="message-content-new" style="cursor: default; max-height: 200px; overflow-y: auto;"></div>
+          <div class="message-timestamp-new">${timestamp}</div>
+        </div>
+      `;
+
+      messageDiv.innerHTML = messageHTML;
+
+      // Set the content as plain text to avoid HTML rendering
+      const contentDiv = messageDiv.querySelector('.message-content-new');
+      contentDiv.textContent = content; // This will show raw code, not render HTML
+
+      // Hide typing indicator before adding message
+      hideTypingIndicator();
+
+      conversationMessages.appendChild(messageDiv);
+
+      // Auto-scroll to bottom
+      liveConversation.scrollTop = liveConversation.scrollHeight;
+
+      // Update conversation count
+      conversationMessageCount++;
+      conversationCount.textContent = `${conversationMessageCount} messages`;
+
+      console.log(`✅ Message from Agent ${agentLetter} added to conversation`);
+    }
+
+    function showCollaborationStatus(message) {
+      collaborationStatus.innerHTML = `<div class="collaboration-status">${message}</div>`;
+      collaborationStatus.style.display = 'block';
+    }
+
+    function displayProcessingTime(timing) {
+      timeBreakdownEl.innerHTML = `
+        <div class="time-item">
+          <div class="time-label">Agent A (Cleaning)</div>
+          <div class="time-value">${timing.agent_a}s</div>
+        </div>
+        <div class="time-item">
+          <div class="time-label">Agent B (Analysis)</div>
+          <div class="time-value">${timing.agent_b}s</div>
+        </div>
+        <div class="time-item">
+          <div class="time-label">Agents C&D (Chart)</div>
+          <div class="time-value">${timing.agent_c_d}s</div>
+        </div>
+        <div class="time-item">
+          <div class="time-label">Total Time</div>
+          <div class="time-value">${timing.total}s</div>
+        </div>
+      `;
+      timeEl.style.display = 'block';
+    }
+
+    function resetProgress() {
+      console.log('🔄 Resetting all progress indicators...');
+
+      // Clear stored data for regeneration
+      lastCleanedData = null;
+      lastGraphIdeas = null;
+
+      // Reset agent cards
+      Object.keys(agentCards).forEach(agent => {
+        console.log(`Resetting Agent ${agent} to pending...`);
+        updateAgentStatus(agent, 'pending');
+        const durationEl = document.getElementById(`duration${agent}`);
+        if (durationEl) durationEl.textContent = '';
+      });
+
+      // Reset conversation
+      conversationMessages.innerHTML = '';
+      conversationMessageCount = 0;
+      conversationCount.textContent = '';
+
+      // Hide elements
+      liveConversation.style.display = 'none';
+      collaborationStatus.style.display = 'none';
+
+      // Hide chart button
+      const chartButtonContainer = document.getElementById('chartButtonContainer');
+      if (chartButtonContainer) {
+        chartButtonContainer.style.display = 'none';
+      }
+
+      // Hide sections
+      Object.values(sections).forEach(section => {
+        if (section) {
+          section.style.display = 'none';
+          section.classList.remove('visible');
+        }
+      });
+
+      timeEl.style.display = 'none';
+
+      console.log('✅ Progress reset complete');
+    }
+
+    function openChartsInNewTab(chartCode) {
+      console.log('🚀 Opening charts in new tab...');
+      console.log('📊 Chart code provided:', !!chartCode);
+      console.log('📊 Window chart code available:', !!window.currentChartCode);
+      console.log('📊 Chart code length:', chartCode ? chartCode.length : 'undefined');
+
+      // Use provided chartCode or fallback to stored version
+      const codeToUse = chartCode || window.currentChartCode;
+
+      if (!codeToUse) {
+        console.error('❌ No chart code available');
+        alert('Chart code not available. Please try processing again.');
+        return false;
+      }
+
+      console.log('📊 Using chart code length:', codeToUse.length);
+      console.log('📊 Chart code preview:', codeToUse.substring(0, 200));
+
+      try {
+        // Create a fresh blob each time
+        const blob = new Blob([codeToUse], { type: 'text/html; charset=utf-8' });
+        const url = URL.createObjectURL(blob);
+
+        console.log('📊 Blob created, URL:', url);
+
+        // Open in new tab with unique target to avoid caching issues
+        const timestamp = Date.now();
+        const newTab = window.open(url, `charts_${timestamp}`);
+
+        if (newTab) {
+          console.log('✅ Charts opened in new tab successfully');
+
+          // Store the URL temporarily and clean up after the tab loads
+          const cleanupTimeout = setTimeout(() => {
+            URL.revokeObjectURL(url);
+            console.log('🧹 Blob URL cleaned up after timeout');
+          }, 5000); // Increased timeout to ensure tab loads
+
+          // Try to detect when the new tab is loaded and clean up sooner
+          try {
+            newTab.addEventListener('load', () => {
+              clearTimeout(cleanupTimeout);
+              setTimeout(() => {
+                URL.revokeObjectURL(url);
+                console.log('🧹 Blob URL cleaned up after load');
+              }, 1000);
+            });
+          } catch (e) {
+            // Cross-origin restriction - fallback to timeout cleanup
+            console.log('📝 Using timeout cleanup due to cross-origin restrictions');
+          }
+
+          return true;
+        } else {
+          console.error('❌ Failed to open new tab - popup blocked?');
+          URL.revokeObjectURL(url); // Clean up immediately if failed
+          alert('Pop-up blocked! Please allow pop-ups for this site to view charts in a new tab.');
+          return false;
+        }
+      } catch (error) {
+        console.error('❌ Error creating chart tab:', error);
+        alert('Error opening charts. Please check the console for details.');
+        return false;
+      }
+    }
+
+    // Global variables to store last session data
+    let lastCleanedData = null;
+    let lastGraphIdeas = null;
+
+    function regenerateCharts() {
+      if (!lastCleanedData || !lastGraphIdeas) {
+        alert('No previous data available. Please run the full process first.');
+        return;
+      }
+
+      console.log('🔄 Regenerating charts with existing data...');
+
+      // Reset conversation and show loading
+      conversationMessages.innerHTML = '';
+      conversationMessageCount = 0;
+      conversationCount.textContent = '';
+      liveConversation.style.display = 'block';
+
+      // Update CD agent to processing
+      updateAgentStatus('CD', 'processing');
+      showTypingIndicator('C');
+      showCollaborationStatus('🔄 Regenerating charts with existing data...');
+
+      // Disable regenerate button
+      const regenBtn = document.getElementById('regenerateBtn');
+      if (regenBtn) {
+        regenBtn.disabled = true;
+        regenBtn.innerHTML = '🔄 Regenerating...';
+      }
+
+      // Hide chart button temporarily
+      const chartButtonContainer = document.getElementById('chartButtonContainer');
+      if (chartButtonContainer) {
+        chartButtonContainer.style.display = 'none';
+      }
+
+      // Start regeneration process
+      regenerateChartsStream();
+    }
+
+    async function regenerateChartsStream() {
+      try {
+        // Close any existing EventSource
+        if (eventSource) {
+          eventSource.close();
+        }
+
+        // Step 1: Start regeneration
+        const formData = new FormData();
+        formData.append('cleaned_data', lastCleanedData);
+        formData.append('graph_ideas', lastGraphIdeas);
+
+        const startResponse = await fetch('http://localhost:8000/regenerate_charts', {
+          method: 'POST',
+          body: formData
+        });
+
+        if (!startResponse.ok) {
+          const error = await startResponse.json();
+          throw new Error(error.error || 'Failed to start chart regeneration');
+        }
+
+        const { session_id } = await startResponse.json();
+        console.log(`🎯 Chart regeneration started with ID: ${session_id}`);
+
+        // Step 2: Create EventSource to stream results
+        const streamUrl = `http://localhost:8000/stream/${session_id}`;
+        console.log(`📡 Connecting to regeneration stream: ${streamUrl}`);
+        eventSource = new EventSource(streamUrl);
+
+        // Handle events (reuse existing handlers but filter for C&D only)
+        eventSource.addEventListener('agent_action', function(event) {
+          const data = JSON.parse(event.data);
+          if (data.agent === 'C' || data.agent === 'D') {
+            showTypingIndicator(data.agent);
+            showCollaborationStatus(`${data.agent === 'C' ? '🎨' : '🔍'} Agent ${data.agent}: ${data.action}`);
+          }
+        });
+
+        eventSource.addEventListener('agent_interaction', function(event) {
+          const data = JSON.parse(event.data);
+          addLiveMessage(data.interaction);
+        });
+
+        eventSource.addEventListener('collaboration_complete', function(event) {
+          const data = JSON.parse(event.data);
+          updateAgentStatus('CD', 'completed');
+          showCollaborationStatus(`🎉 ${data.message}`);
+        });
+
+        eventSource.addEventListener('processing_complete', function(event) {
+          const data = JSON.parse(event.data);
+          console.log('🏁 CHART REGENERATION COMPLETE:', data);
+
+          hideTypingIndicator();
+
+          if (data.final_chart_code) {
+            // Store the new chart code with verification
+            window.currentChartCode = data.final_chart_code;
+            console.log('📊 New chart code stored, length:', window.currentChartCode?.length);
+
+            // Show chart buttons again
+            const chartButtonContainer = document.getElementById('chartButtonContainer');
+            if (chartButtonContainer) {
+              chartButtonContainer.style.display = 'block';
+            }
+
+            // Re-enable regenerate button
+            const regenBtn = document.getElementById('regenerateBtn');
+            if (regenBtn) {
+              regenBtn.disabled = false;
+              regenBtn.innerHTML = '🔄 Regenerate Charts';
+            }
+
+            showSuccess(`🎉 Charts regenerated successfully in ${data.processing_time?.total || 'unknown'}s!`);
+          }
+
+          eventSource.close();
+        });
+
+        eventSource.addEventListener('error', function(event) {
+          const data = JSON.parse(event.data);
+          showError(data.message);
+
+          const regenBtn = document.getElementById('regenerateBtn');
+          if (regenBtn) {
+            regenBtn.disabled = false;
+            regenBtn.innerHTML = '🔄 Regenerate Charts';
+          }
+
+          eventSource.close();
+        });
+
+      } catch (err) {
+        console.error('Regeneration failed:', err);
+        showError('Failed to regenerate charts: ' + err.message);
+
+        const regenBtn = document.getElementById('regenerateBtn');
+        if (regenBtn) {
+          regenBtn.disabled = false;
+          regenBtn.innerHTML = '🔄 Regenerate Charts';
+        }
+      }
+    }
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      hideError();
+      resetProgress();
+
+      const formData = new FormData();
+      const file = document.getElementById('csvFile').files[0];
+      const text = document.getElementById('csvText').value.trim();
+
+      if (file) {
+        formData.append('file', file);
+      } else if (text !== '') {
+        formData.append('csv_text', text);
+      } else {
+        showError("Please upload a CSV file or paste CSV text.");
+        return;
+      }
+
+      // Show progress container immediately when processing starts
+      progressContainer.style.display = 'block';
+
+      // Reset all agents to pending state with visual feedback
+      console.log('🔄 Initializing agent progress cards...');
+      console.log('Available agent cards:', Object.keys(agentCards));
+      updateAgentStatus('A', 'pending');
+      updateAgentStatus('B', 'pending');
+      updateAgentStatus('CD', 'pending');
+
+      // Disable submit button with clear visual feedback
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = '<div class="loading"><div class="spinner"></div>Processing in real-time...</div>';
+
+      try {
+        // Close any existing EventSource
+        if (eventSource) {
+          eventSource.close();
+        }
+
+        // Step 1: Start processing by sending form data
+        const startResponse = await fetch('http://localhost:8000/start_processing', {
+          method: 'POST',
+          body: formData
+        });
+
+        if (!startResponse.ok) {
+          const error = await startResponse.json();
+          throw new Error(error.error || 'Failed to start processing');
+        }
+
+        const { session_id } = await startResponse.json();
+        console.log(`🎯 Session started with ID: ${session_id}`);
+
+        // Show immediate feedback about connection
+        showCollaborationStatus(`🔗 Connected! Session ID: ${session_id.substring(0, 8)}...`);
+
+        // Step 2: Create EventSource to stream results
+        const streamUrl = `http://localhost:8000/stream/${session_id}`;
+        console.log(`📡 Connecting to stream: ${streamUrl}`);
+        eventSource = new EventSource(streamUrl);
+
+        eventSource.onmessage = function(event) {
+          console.log('Received event:', event.data);
+        };
+
+        // Add immediate debugging
+        eventSource.onmessage = function(event) {
+          console.log('📨 Raw SSE message received:', event);
+        };
+
+        // Handle different event types with immediate visual updates
+        eventSource.addEventListener('status', function(event) {
+          const data = JSON.parse(event.data);
+          console.log('📋 Status event:', data);
+          showCollaborationStatus(`🔄 ${data.message}`);
+        });
+
+        eventSource.addEventListener('agent_start', function(event) {
+          const data = JSON.parse(event.data);
+          console.log(`🚀 Agent ${data.agent} started:`, data);
+
+          // Immediately update the visual status
+          updateAgentStatus(data.agent, 'processing');
+
+          if (data.agent === 'A') {
+            showCollaborationStatus(`🔧 Agent A is cleaning your data...`);
+          } else if (data.agent === 'B') {
+            showCollaborationStatus(`📊 Agent B is analyzing patterns...`);
+          }
+        });
+
+        eventSource.addEventListener('agent_complete', function(event) {
+          const data = JSON.parse(event.data);
+          console.log(`✅ Agent ${data.agent} completed:`, data);
+
+          // Immediately update the visual status with duration
+          updateAgentStatus(data.agent, 'completed', data.duration);
+
+          // Display results immediately
+          if (data.agent === 'A') {
+            cleanedEl.textContent = data.result;
+            showSection('agentA');
+            showCollaborationStatus(`✅ Agent A completed data cleaning in ${data.duration}s`);
+          } else if (data.agent === 'B') {
+            graphEl.textContent = data.result;
+            showSection('agentB');
+            showCollaborationStatus(`✅ Agent B completed analysis in ${data.duration}s`);
+          }
+        });
+
+        eventSource.addEventListener('collaboration_start', function(event) {
+          const data = JSON.parse(event.data);
+          console.log('🤝 Collaboration STARTED - Updating UI immediately:', data);
+
+          // IMMEDIATELY update CD agent status to processing (with extra logging)
+          console.log('🎯 About to update CD agent status to processing...');
+          updateAgentStatus('CD', 'processing');
+          console.log('✅ CD agent status update completed');
+
+          // IMMEDIATELY open the live conversation window
+          console.log('📱 Opening live conversation window...');
+          liveConversation.style.display = 'block';
+          showSection('conversation');
+          showCollaborationStatus(`🤝 Agents C & D are collaborating on chart creation...`);
+
+          // Show initial typing indicator
+          showTypingIndicator('C');
+          console.log('⌨️ Typing indicator shown for Agent C');
+        });
+
+        eventSource.addEventListener('agent_action', function(event) {
+          const data = JSON.parse(event.data);
+          console.log(`🎯 Agent ${data.agent} ACTION:`, data);
+
+          // Show typing indicator for the agent that's working
+          if (data.agent === 'C' || data.agent === 'D') {
+            showTypingIndicator(data.agent);
+          }
+
+          showCollaborationStatus(`${data.agent === 'C' ? '🎨' : '🔍'} Agent ${data.agent}: ${data.action}`);
+        });
+
+        eventSource.addEventListener('agent_interaction', function(event) {
+          const data = JSON.parse(event.data);
+          console.log('💬 Agent INTERACTION:', data);
+
+          // Add the message with enhanced styling
+          addLiveMessage(data.interaction);
+
+          // Show typing for next agent if this is not the last interaction
+          if (data.interaction.role.includes('Agent C')) {
+            // After C, D will review
+            setTimeout(() => showTypingIndicator('D'), 1000);
+          } else if (data.interaction.role.includes('Agent D') && data.interaction.content.includes('❌')) {
+            // If D found issues, C will fix
+            setTimeout(() => showTypingIndicator('C'), 1000);
+          }
+        });
+
+        eventSource.addEventListener('collaboration_complete', function(event) {
+          const data = JSON.parse(event.data);
+          console.log('🎉 Collaboration COMPLETED - Updating UI immediately:', data);
+
+          // Immediately update CD status to completed with iteration info
+          const duration = data.iterations ? `${data.iterations} rounds` : 'Done';
+          updateAgentStatus('CD', 'completed');
+
+          // Update the duration display manually
+          const durationEl = document.getElementById('durationCD');
+          if (durationEl) {
+            durationEl.textContent = duration;
+          }
+
+          showCollaborationStatus(`🎉 ${data.message}`);
+        });
+
+        eventSource.addEventListener('processing_complete', function(event) {
+          const data = JSON.parse(event.data);
+          console.log('🏁 PROCESSING COMPLETE:', data);
+
+          // Hide typing indicator
+          hideTypingIndicator();
+
+          // Show chart button outside conversation
+          if (data.final_chart_code) {
+            console.log('📊 Chart code received, length:', data.final_chart_code.length);
+            console.log('📊 Chart code starts with:', data.final_chart_code.substring(0, 100));
+            console.log('📊 Chart code contains data?', data.final_chart_code.includes('const data') || data.final_chart_code.includes('var data'));
+
+            // Store chart code globally with verification
+            window.currentChartCode = data.final_chart_code;
+            console.log('📊 Chart code stored in window.currentChartCode');
+            console.log('📊 Verification - stored code length:', window.currentChartCode?.length);
+
+            // Show the chart button outside conversation
+            const chartButtonContainer = document.getElementById('chartButtonContainer');
+            if (chartButtonContainer) {
+              chartButtonContainer.style.display = 'block';
+              console.log('📊 Chart button container made visible');
+            }
+
+            console.log('📊 Chart button displayed outside conversation');
+          } else {
+            console.error('❌ No chart code received in processing_complete event');
+            console.log('📊 Available data keys:', Object.keys(data));
+          }
+
+          // Display timing
+          if (data.processing_time) {
+            displayProcessingTime(data.processing_time);
+          }
+
+          showSuccess(`🎉 Successfully created 2 stunning visualizations with ${data.total_interactions} agent interactions in ${data.processing_time.total}s!`);
+
+          // Re-enable submit button
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = '🚀 Process with AI Agents (Real-time)';
+
+          // Close EventSource
+          eventSource.close();
+          console.log('🔌 EventSource connection closed after completion');
+        });
+
+        eventSource.addEventListener('error', function(event) {
+          const data = JSON.parse(event.data);
+          showError(data.message);
+
+          // Re-enable submit button
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = '🚀 Process with AI Agents (Real-time)';
+
+          eventSource.close();
+        });
+
+        eventSource.onerror = function(error) {
+          console.error('❌ EventSource error:', error);
+          console.log('EventSource readyState:', eventSource.readyState);
+
+          if (eventSource.readyState === EventSource.CLOSED) {
+            console.log('EventSource connection closed');
+          } else if (eventSource.readyState === EventSource.CONNECTING) {
+            console.log('EventSource reconnecting...');
+          }
+
+          showError('Connection lost or server error. Please check the console and try again.');
+
+          // Reset UI
+          submitBtn.disabled = false;
+          submitBtn.innerHTML = '🚀 Process with AI Agents (Real-time)';
+
+          if (eventSource.readyState === EventSource.CLOSED) {
+            eventSource.close();
+          }
+        };
+
+      } catch (err) {
+        console.error('Request failed:', err);
+        showError('Failed to connect to server. Make sure the API is running on localhost:8000');
+
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = '🚀 Process with AI Agents (Real-time)';
+      }
+    });
+
+    // Health check on page load
+    window.addEventListener('load', async () => {
+      try {
+        const response = await fetch('http://localhost:8000/health');
+        if (response.ok) {
+          console.log('✅ API server is healthy');
+        } else {
+          console.warn('⚠️ API server health check failed');
+        }
+      } catch (err) {
+        console.warn('⚠️ Could not reach API server');
+      }
+    });
+
+    // Cleanup EventSource on page unload
+    window.addEventListener('beforeunload', () => {
+      if (eventSource) {
+        eventSource.close();
+      }
+    });
+  </script>
+</body>
+</html>
