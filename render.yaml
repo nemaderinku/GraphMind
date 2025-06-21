@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: GraphMind
+    env: python
+    pythonVersion: "3.11"  # Use Python 3.11 for pandas compatibility
+    buildCommand: |
+      apt-get update && apt-get install -y build-essential python3-dev
+      pip install --upgrade pip setuptools wheel
+      pip uninstall numpy -y  # Match your local workflow
+      pip install -r requirements.txt
+    startCommand: "uvicorn main:app --host 0.0.0.0 --port $PORT"  # Use Render's $PORT
+    envVars:
+      - key: PYTHONUNBUFFERED
+        value: "1"  # Ensure logs are streamed in real-time
