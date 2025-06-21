@@ -16,7 +16,6 @@ import time
 import json
 from typing import List, Dict, Generator
 import constants
-from keys_sensitive import BASE_URL
 import os
 from dotenv import load_dotenv
 
